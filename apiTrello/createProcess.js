@@ -2,26 +2,6 @@ const requestBase = require('./request');
 require('dotenv').config();
 
 var requestTrello = requestBase();
-/*
-exports.getToken = () => {
-    const data = {
-        expiration: '1day',
-        name: 'TFM',
-        scope: 'read,write',
-        response_type: 'token',
-    }
-    setConfigKey(data);
-
-    return requestTrello.get('/authorize', data)
-        .then(resp => {
-            console.log("OK " + JSON.stringify(resp));
-            //return resp.data.id;
-        })
-        .catch(error => {
-            console.log("PAS OK! " + JSON.stringify(error.response.data));
-            //return (error.message + ' ( ' + error.response.statusText + ' ) : ' + error.response.data);
-        })
-}*/
 
 exports.createBoard = (nameBoard) => {
     const data = {
