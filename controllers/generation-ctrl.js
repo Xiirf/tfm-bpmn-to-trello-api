@@ -30,15 +30,15 @@ const createElement = require('../apiTrello/createProcess');
  *          description: Error (see description)
  */
 exports.generate = (req, res) => {
-    const { teamName, file } = req.body;
+    const { teamName, file, token, key } = req.body;
 
-    if (!teamName || !file) {
+    if (!teamName || !file || !token || !key) {
         return res.status(400).json({
-            error: 'Debe indicar el teamName y el fichero',
+            error: 'Debe indicar el teamName, el fichero, el token y la key',
         })
     }
 
-    readBPMN.getElementfromDiagram(xmlContent).then((data) => {
+    readBPMN.getElementfromDiagram(file).then((data) => {
         var tasks = data.tasks;
         var boardName = data.boardName;
 		console.log(JSON.stringify(tasks));
@@ -49,9 +49,9 @@ exports.generate = (req, res) => {
             });
         }
         //Création du board
-        createElement.createBoard(boardName)
+        createElement.createBoard(boardName, teamName, token, key)
             .then((idBoard) => {
-				createElement.createList(idBoard, tasks)
+				createElement.createList(idBoard, tasks, token, key)
 				.then(() => {
 					res.status(201).json({
                         error: 'Board created',

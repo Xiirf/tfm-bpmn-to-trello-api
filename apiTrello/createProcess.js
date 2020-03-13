@@ -3,14 +3,15 @@ require('dotenv').config();
 
 var requestTrello = requestBase();
 
-exports.createBoard = (nameBoard) => {
+exports.createBoard = (nameBoard, teamName, token, key) => {
     const data = {
         name: nameBoard,
         defaultLists: false,
-        idOrganization: process.env.teamName,
-        prefs_permissionLevel: 'org'
+        idOrganization: teamName,
+        prefs_permissionLevel: 'org',
+        token,
+        key
     }
-    setConfigKey(data);
     return requestTrello.post('/boards', data)
     .then(resp => {
         console.log("Board : " + nameBoard + " created");
@@ -21,14 +22,15 @@ exports.createBoard = (nameBoard) => {
     })
 }
 
-exports.createList =  async (idBoard, tasks) => {
+exports.createList =  async (idBoard, tasks, token, key) => {
     for (task of tasks) {
         const data = {
             name: task.name,
             idBoard: idBoard,
-            pos: task.pos
+            pos: task.pos,
+            token,
+            key
         }
-        setConfigKey(data);
         const error = await requestTrello.post('/lists', data)
         .then(resp => {
             console.log("List : " + task.name + " created");
@@ -39,10 +41,4 @@ exports.createList =  async (idBoard, tasks) => {
         if (error) return(Error(error));
     };
     return('end');
-}
-
-function setConfigKey(data) {
-    data.key = process.env.api_key;
-    data.token = process.env.token;
-    return data;
 }

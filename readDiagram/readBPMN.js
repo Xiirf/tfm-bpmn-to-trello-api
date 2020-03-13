@@ -3,6 +3,7 @@ const { transform } = require('camaro')
 var tasks = []; 
 
 getElementfromDiagram = async (xmlContent) => {
+    tasks = [];
     const result = await readBPMNToJson(xmlContent)
     const root = result.elem[0];
     const sequence = root.sequenceFlow
