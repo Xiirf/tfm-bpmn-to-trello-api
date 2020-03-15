@@ -39,9 +39,10 @@ exports.generate = (req, res) => {
     }
 
     readBPMN.getElementfromDiagram(file).then((data) => {
+        // Check si on a une erreur?
         var tasks = data.tasks;
         var boardName = data.boardName;
-		console.log(JSON.stringify(tasks));
+        var conditions = data.conditions;
 
         if (!tasks){
             return res.status(400).json({
@@ -51,17 +52,25 @@ exports.generate = (req, res) => {
         //Création du board
         createElement.createBoard(boardName, teamName, token, key)
             .then((idBoard) => {
-				createElement.createList(idBoard, tasks, token, key)
-				.then(() => {
-					res.status(201).json({
-                        error: 'Board created',
+				createElement.createList(idBoard, tasks, token, key, conditions)
+				.then((cond) => {
+                    createElement.createConditions(idBoard, conditions, token, key)
+                    .then(() => {
+                        res.status(201).json({
+                            error: 'Board created',
+                        })
                     })
+                    .catch((error) => {
+                        res.status(500).json({
+                            error,
+                        })
+                    });
 				})
 				.catch((error) => {
 					res.status(500).json({
                         error,
                     })
-				})
+				});
 			})
 			.catch((error) => {
 				res.status(500).json({
