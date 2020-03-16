@@ -4,22 +4,29 @@ require('dotenv').config();
 var requestTrello = requestBase();
 
 exports.createBoard = (nameBoard, teamName, token, key) => {
-    const data = {
-        name: nameBoard,
-        defaultLists: false,
-        idOrganization: teamName,
-        prefs_permissionLevel: 'org',
-        token,
-        key
-    }
-    return requestTrello.post('/boards', data)
-    .then(resp => {
-        console.log("Board : " + nameBoard + " created");
-        return resp.data.id;
-      })
-    .catch(error => {
-        return (error.message + ' ( ' + error.response.statusText + ' ) : ' + error.response.data);
-    })
+    return new Promise( (resolve, reject) => {
+        const data = {
+            name: nameBoard,
+            defaultLists: false,
+            idOrganization: teamName,
+            prefs_permissionLevel: 'org',
+            token,
+            key
+        }
+        return requestTrello.post('/boards', data)
+        .then(resp => {
+            console.log("Board : " + nameBoard + " created");
+            resolve(resp.data.id);
+          })
+        .catch(error => {
+            var err = {
+                error: error.message + ' ( ' + error.response.statusText + ' )',
+                status: error.response.status,
+                msg: error.response.data
+            }
+            reject(err);
+        });
+    });
 }
 
 exports.createList =  async (idBoard, tasks, token, key, conditions) => {
@@ -44,91 +51,135 @@ exports.createList =  async (idBoard, tasks, token, key, conditions) => {
             })
         })
         .catch(error => {
-            return (error.message + ' ( ' + error.response.statusText + ' ) : ' + error.response.data);
-        })
-        if (error) return(Error(error));
+            var err = {
+                error: error.message + ' ( ' + error.response.statusText + ' )',
+                status: error.response.status,
+                msg: error.response.data
+            }
+            return(err);
+        });
+        if (error) throw error;
     };
     return(conditions);
 }
 
-exports.createConditions = async (idBoard, conditions, token, key) => {
-    return getFirstList(idBoard, token, key)
-    .then((idList) => {
-        nameCard = 'Conditions_Data_Storage';
-        return createCard(idList, nameCard, token, key)
-        .then((idCard) => {
-            return createComment(idCard, conditions, token, key)
-            .then((data) => {
-                console.log("Comment created");
+exports.createConditions = (idBoard, conditions, token, key) => {
+    return new Promise( (resolve, reject) => {
+        return getFirstList(idBoard, token, key)
+        .then((idList) => {
+            nameCard = 'Conditions_Data_Storage';
+            return createCard(idList, nameCard, token, key)
+            .then((idCard) => {
+                return createComment(idCard, conditions, token, key)
+                .then(() => {
+                    console.log("Comment created");
+                    resolve();
+                })
+                .catch((error) => {
+                    reject(error);
+                });
             })
             .catch((error) => {
-                return error;
+                reject(error);
             });
         })
         .catch((error) => {
-            return error;
+            reject(error);
         });
-    })
-    .catch((error) => {
-        return error;
     });
 }
 
-getFirstList = async (idBoard, token, key) => {
-    const data = {
-        params: {
+exports.deleteBoard = (idBoard, token, key) => {
+    return new Promise( (resolve, reject) => {
+        const data = {
+            params: {
+                token,
+                key
+            }
+        }
+        return requestTrello.delete('/boards/' + idBoard, data)
+        .then(() => {
+            console.log("Board : deleted");
+            resolve();
+        });
+    });
+}
+
+getFirstList = (idBoard, token, key) => {
+    return new Promise( (resolve, reject) => {
+        const data = {
+            params: {
+                token,
+                key
+            }
+        }
+        return requestTrello.get('/boards/' + idBoard + '/lists', data)
+        .then((resp) => {
+            resolve(idList = resp.data.find(list =>  list.pos===1).id);
+        })
+        .catch(error => {
+            var err = {
+                error: error.message + ' ( ' + error.response.statusText + ' )',
+                status: error.response.status,
+                msg: error.response.data
+            }
+            reject(err);
+        });
+    });
+}
+
+createCard = (idList, nameCard, token, key) => {
+    return new Promise( (resolve, reject) => {
+        const data = {
+            name: nameCard,
+            idList,
             token,
             key
         }
-    }
-    return requestTrello.get('/boards/' + idBoard + '/lists', data)
-    .then((resp) => {
-        return idList = resp.data.find(list =>  list.pos===1).id;
-    })
-    .catch(error => {
-        return (error.message + ' ( ' + error.response.statusText + ' ) : ' + error.response.data);
-    })
-}
-
-createCard = async (idList, nameCard, token, key) => {
-    const data = {
-        name: nameCard,
-        idList,
-        token,
-        key
-    }
-    return requestTrello.post('/cards', data)
-    .then(resp => {
-        console.log("Card : " + nameCard + " created");
-        return resp.data.id;
-      })
-    .catch(error => {
-        return (error.message + ' ( ' + error.response.statusText + ' ) : ' + error.response.data);
-    })
-}
-
-createComment = async (idCard, conditions, token, key) => {
-    var content = '';
-
-    conditions.forEach(element => {
-        content += element.name + ':';
-        element.branch.forEach((item) => {
-            content += item.task + '=' + item.nameCondition + '/';
+        return requestTrello.post('/cards', data)
+        .then(resp => {
+            console.log("Card : " + nameCard + " created");
+            resolve(resp.data.id);
         })
-        content += '\n';
+        .catch(error => {
+            var err = {
+                error: error.message + ' ( ' + error.response.statusText + ' )',
+                status: error.response.status,
+                msg: error.response.data
+            }
+            reject(err);
+        });
     });
-    const data = {
-        text: content,
-        token,
-        key
-    }
-    return requestTrello.post('/cards/' + idCard + '/actions/comments', data)
-    .then(resp => {
-        console.log("Comment created.");
-        return resp.data.id;
-      })
-    .catch(error => {
-        console.log(error);
-        return (error.message + ' ( ' + error.response.statusText + ' ) : ' + error.response.data);
-    })
+}
+
+createComment = (idCard, conditions, token, key) => {
+    return new Promise( (resolve, reject) => {
+        var content = '';
+
+        conditions.forEach(element => {
+            content += element.name + ':';
+            element.branch.forEach((item) => {
+                content += item.task + '=' + item.nameCondition + '/';
+            })
+            content += '\n';
+        });
+        const data = {
+            text: content,
+            token,
+            key
+        }
+        return requestTrello.post('/cards/' + idCard + '/actions/comments', data)
+        .then(resp => {
+            console.log("Comment created.");
+            resolve(resp.data.id);
+        })
+        .catch(error => {
+            var err = {
+                error: error.message + ' ( ' + error.response.statusText + ' )',
+                status: error.response.status,
+                msg: error.response.data
+            }
+            reject(err);
+        });
+    });
 }

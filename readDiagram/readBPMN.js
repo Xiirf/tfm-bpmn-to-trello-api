@@ -15,38 +15,41 @@ getElementfromDiagram = async (xmlContent) => {
     getAllTasks(root);
     var boardName = root.boardName;
     setConditions(root.exclusiveGateway);
+    if (tasks.length === 0){
+        return {error: 'You have to add some task'}
+    }
+    if (root.startEvent.id === '' || !root.endEvent.id === ''){
+        return {error: 'You have to add start and end event'}
+    }
+    if (!boardName){
+        return {error: 'You have to add a boardName'}
+    }
+    if (sequence.length === 0){
+        return {error: 'You have to add links between object'}
+    }
 
     // TODO Si plusieurs conditions à la suite??
     // TODO check si on a bien une tâche start et end
-    /*
-    // Position
-    var tempPos = null;
-    for (var i = sequence.length-1; i >= 0; i--) {
-        // If next target is condition
-        if(isCondition(sequence[i].target)){
-            //Pos for the next task (we dodge condition to assign pos)
-            tempPos = getTaskPos(sequence[i].source);
-        } else if (isCondition(sequence[i].source) && isTasks(sequence[i].target)){
-            //In this case with just have 1 condition and then a task
-            setBranchCondition(sequence[i].source, sequence[i].target, sequence[i].name);
-        } else {
-            if (!tempPos) {
-                setTaskPos(sequence[i].target, getTaskPos(sequence[i].source) +1 );
-            }else {
-                setTaskPos(sequence[i].target, getTaskPos(sequence[i].source) +1 );
-            }
-        }
-    }*/
-    // Get the first link
+    
     console.log(JSON.stringify(conditions));
     var nextSequence = findSequence(root.startEvent.id);
     assignPosition(nextSequence);
-
-    return {
+    var error;
+    conditions.forEach(condition => {
+        if (condition.name === ''){
+            error = {error: 'Condition must have a name'}
+        }
+        condition.branch.forEach(item => {
+            if (item.nameCondition === '') {
+                error = {error: 'A condition must have choices'}
+            }
+        })
+    })
+    return (error ? error : {
         boardName,
         tasks,
         conditions
-    }
+    })
 }
 
 assignPosition = (nextSequence, tempPos = null) => {
@@ -77,8 +80,6 @@ assignPosition = (nextSequence, tempPos = null) => {
 findSequence = (id) => {
     return sequence.find(sequence => sequence.source === id);
 }
-
-
 
 // Define conditions
 setConditions = (allConditions) => {
