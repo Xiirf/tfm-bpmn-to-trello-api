@@ -40,7 +40,7 @@ exports.generate = (req, res) => {
     readBPMN.getElementfromDiagram(file).then((data) => {
         var tasks = data.tasks;
         var boardName = data.boardName;
-        var conditions = data.conditions;
+        var conditions = data.tasksConditions;
 
         if (data.error){
             return res.status(400).json({
@@ -53,7 +53,6 @@ exports.generate = (req, res) => {
                 return createElement.createList(idBoard, tasks, token, key, conditions)
                     .then((cond) => {
                         if (!(cond.length === 0)){
-                            console.log("IN");
                             createElement.createConditions(idBoard, cond, token, key)
                                 .then(() => {
                                     res.status(201).json({

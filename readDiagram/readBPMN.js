@@ -3,10 +3,13 @@ const { transform } = require('camaro')
 var tasks = []; 
 var conditions = [];
 var sequence = [];
+var tasksConditions = [];
+var tempPos;
 
 getElementfromDiagram = async (xmlContent) => {
     tasks = [];
     conditions = [];
+    tasksConditions = [];
     const result = await readBPMNToJson(xmlContent)
     const root = result.elem[0];
     sequence = root.sequenceFlow;
@@ -28,46 +31,58 @@ getElementfromDiagram = async (xmlContent) => {
         return {error: 'You have to add links between object'}
     }
 
-    // TODO Si plusieurs conditions à la suite??
-    // TODO check si on a bien une tâche start et end
-    
-    console.log(JSON.stringify(conditions));
     var nextSequence = findSequence(root.startEvent.id);
     assignPosition(nextSequence);
     var error;
-    conditions.forEach(condition => {
-        if (condition.name === ''){
-            error = {error: 'Condition must have a name'}
-        }
-        condition.branch.forEach(item => {
-            if (item.nameCondition === '') {
+    tasksConditions.forEach(taskConditions => {
+        taskConditions.conditions.forEach(condition => {
+            if (condition.name === ''){
+                error = {error: 'Condition must have a name'}
+            }
+            if (condition.choice === '') {
                 error = {error: 'A condition must have choices'}
             }
         })
     })
+
     return (error ? error : {
         boardName,
         tasks,
-        conditions
+        tasksConditions
     })
 }
 
-assignPosition = (nextSequence, tempPos = null) => {
-
+assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
     if(isTasks(nextSequence.source) && isCondition(nextSequence.target)){
         //Pos for the next task (we dodge condition to assign pos)
         tempPos = getTaskPos(nextSequence.source) + 1;
         var tabCond = sequence.filter(sequence => sequence.source === nextSequence.target);
         tabCond.forEach((cond) => {
-            assignPosition(cond, tempPos);
+            lastTask = nextSequence.source;
+            assignPosition(cond, lastTask);
+            tempPos = tempPos + 1;
+        })
+    } else if (isCondition(nextSequence.source) && isCondition(nextSequence.target)) {
+        var tabSeq = sequence.filter(sequence => sequence.source === nextSequence.target);
+        conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
+        conditionToAdd.choice = nextSequence.name;
+        tabConditions.push(conditionToAdd);
+        tabSeq.forEach((cond) => {
+            var temp = Array.from(tabConditions);
+            assignPosition(cond, lastTask, temp);
             tempPos = tempPos + 1;
         })
     } else {
         if (isCondition(nextSequence.source) && isTasks(nextSequence.target)){
-            //In this case with just have 1 condition and then a task
-            setBranchCondition(nextSequence.source, nextSequence.target, nextSequence.name);
+            conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
+            conditionToAdd.choice = nextSequence.name;
+            tabConditions.push(conditionToAdd);
+            setTaskCondition(nextSequence.target, tabConditions);
+            setPreviousTask(nextSequence.target, lastTask);
             setTaskPos(nextSequence.target, tempPos);
+            tabConditions = [];
         } else {
+            setPreviousTask(nextSequence.target, nextSequence.source);
             setTaskPos(nextSequence.target, getTaskPos(nextSequence.source) +1 );
         }
         nextSequence = findSequence(nextSequence.target);
@@ -76,6 +91,34 @@ assignPosition = (nextSequence, tempPos = null) => {
         }
     }
 }
+
+setTaskCondition = (idTask, tabConditions) => {
+    tasksConditions.push({
+        idTask,
+        conditions: [],
+        lastTask: []
+    });
+    item = tasksConditions.find(taskConditions => taskConditions.idTask === idTask);
+    tabConditions.forEach(condition => {
+        item.conditions.push({
+            name: condition.name,
+            choice: condition.choice
+        })
+    })
+}
+
+setPreviousTask = (idTask, lastTask) => {
+    if(tasksConditions.find(taskConditions => taskConditions.idTask === idTask)){
+        tasksConditions.find(taskConditions => taskConditions.idTask === idTask).lastTask.push(lastTask);
+    } else {
+        tasksConditions.push({
+            idTask,
+            conditions: [],
+            lastTask: [lastTask]
+        });
+    }
+}
+
 
 findSequence = (id) => {
     return sequence.find(sequence => sequence.source === id);
@@ -86,17 +129,9 @@ setConditions = (allConditions) => {
     allConditions.forEach(condition => {
         conditions.push({
             name: condition.name,
-            id: condition.id,
-            branch: [],
+            id: condition.id
         });
     })
-}
-
-setBranchCondition = (idCondition, idTarget, nameCondition) => {
-    conditions.find(condition => condition.id === idCondition).branch.push({
-        task: idTarget,
-        nameCondition
-    });
 }
 
 // Check if the id object is a condition
@@ -136,7 +171,9 @@ getTaskPos = (id) => {
 }
 
 setTaskPos = (id, pos) => {
-    tasks.find(task => task.id === id).pos = pos;
+    if (getTaskPos(id) < pos) {
+        tasks.find(task => task.id === id).pos = pos;
+    }
 }
 
 

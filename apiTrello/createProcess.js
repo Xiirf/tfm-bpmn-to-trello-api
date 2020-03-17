@@ -43,11 +43,15 @@ exports.createList =  async (idBoard, tasks, token, key, conditions) => {
             console.log("List : " + task.name + " created");
             //Change task by the listId
             conditions.forEach(condition => {
-                condition.branch.forEach((item => {
-                    if (item.task === task.id) {
-                        item.task = resp.data.id;
+                if (condition.idTask === task.id) {
+                    condition.idTask = resp.data.id;
+                } else {
+                    const index = condition.lastTask.indexOf(task.id);
+                    if (index > -1) {
+                        condition.lastTask.splice(index, 1);
+                        condition.lastTask.push(resp.data.id);
                     }
-                }))
+                }
             })
         })
         .catch(error => {
@@ -156,13 +160,14 @@ createComment = (idCard, conditions, token, key) => {
     return new Promise( (resolve, reject) => {
         var content = '';
 
-        conditions.forEach(element => {
+        /*conditions.forEach(element => {
             content += element.name + ':';
             element.branch.forEach((item) => {
                 content += item.task + '=' + item.nameCondition + '/';
             })
             content += '\n';
-        });
+        });*/
+        content = JSON.stringify(conditions);
         const data = {
             text: content,
             token,
