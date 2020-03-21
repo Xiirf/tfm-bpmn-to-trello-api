@@ -69,15 +69,21 @@ exports.createList =  async (idBoard, tasks, token, key, conditions) => {
 
 exports.createConditions = (idBoard, conditions, token, key) => {
     return new Promise( (resolve, reject) => {
-        return getFirstList(idBoard, token, key)
+        getFirstList(idBoard, token, key)
         .then((idList) => {
             nameCard = 'Conditions_Data_Storage';
-            return createCard(idList, nameCard, token, key)
+            createCard(idList, nameCard, token, key)
             .then((idCard) => {
-                return createComment(idCard, conditions, token, key)
+                createComment(idCard, conditions, token, key)
                 .then(() => {
                     console.log("Comment created");
-                    resolve();
+                    closeCard(idCard, token, key)
+                    .then(() => {
+                        resolve();
+                    })
+                    .catch((error) => {
+                        reject(error);
+                    });
                 })
                 .catch((error) => {
                     reject(error);
@@ -177,6 +183,29 @@ createComment = (idCard, conditions, token, key) => {
         .then(resp => {
             console.log("Comment created.");
             resolve(resp.data.id);
+        })
+        .catch(error => {
+            var err = {
+                error: error.message + ' ( ' + error.response.statusText + ' )',
+                status: error.response.status,
+                msg: error.response.data
+            }
+            reject(err);
+        });
+    });
+}
+
+closeCard = (idCard, token, key) => {
+    return new Promise( (resolve, reject) => {
+        const data = {
+            token,
+            key,
+            closed: true
+        }
+        return requestTrello.put('/cards/' + idCard, data)
+        .then(resp => {
+            console.log("Card : " + nameCard + " closed");
+            resolve();
         })
         .catch(error => {
             var err = {
