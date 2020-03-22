@@ -105,7 +105,8 @@ setTaskCondition = (idTask, tabConditions) => {
         item.conditions.push({
             name: condition.name,
             choice: condition.choice,
-            id: condition.idUnique
+            id: condition.id,
+            idUnique: condition.idUnique
         })
     })
 }
