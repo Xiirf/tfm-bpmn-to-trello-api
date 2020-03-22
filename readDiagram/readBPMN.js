@@ -65,6 +65,7 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
     } else if (isCondition(nextSequence.source) && isCondition(nextSequence.target)) {
         var tabSeq = sequence.filter(sequence => sequence.source === nextSequence.target);
         conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
+        conditionToAdd.idUnique = nextSequence.id;
         conditionToAdd.choice = nextSequence.name;
         tabConditions.push(conditionToAdd);
         tabSeq.forEach((cond) => {
@@ -76,6 +77,7 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
         if (isCondition(nextSequence.source) && isTasks(nextSequence.target)){
             conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
             conditionToAdd.choice = nextSequence.name;
+            conditionToAdd.idUnique = nextSequence.id;
             tabConditions.push(conditionToAdd);
             setTaskCondition(nextSequence.target, tabConditions);
             setPreviousTask(nextSequence.target, lastTask);
@@ -103,7 +105,7 @@ setTaskCondition = (idTask, tabConditions) => {
         item.conditions.push({
             name: condition.name,
             choice: condition.choice,
-            id: condition.id
+            id: condition.idUnique
         })
     })
 }
@@ -195,7 +197,8 @@ readBPMNToJson = async function (xmlContent) {
                 sequenceFlow: ['process/sequenceFlow', {
                     source: '@sourceRef',
                     target: '@targetRef',
-                    name: '@name'
+                    name: '@name',
+                    id: '@id'
                 }],
                 exclusiveGateway: ['process/exclusiveGateway', {
                     id: '@id',
