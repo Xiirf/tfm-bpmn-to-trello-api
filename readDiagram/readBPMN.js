@@ -31,19 +31,42 @@ getElementfromDiagram = async (xmlContent) => {
         return {error: 'You have to add links between object'}
     }
 
+    var error = setChoiceSequence();
+    if (error) {
+        return error;
+    }
+    // Test if all choices of a condition use the same var
+    sequence.forEach(seq => {
+        if (seq.choice) {
+            const nameVarToRespect = seq.choice.nameVar;
+            let results = sequence.filter( sequence => sequence.source === seq.source);
+            results.forEach(sequence => {
+                if (sequence.choice) {
+                    if (sequence.choice.nameVar !== nameVarToRespect) {
+                        error = {error: 'All choices condition should use the same var'};
+                    }
+                }
+            })
+        }
+    });
+
+    if (error) {
+        return error;
+    }
+
     var nextSequence = findSequence(root.startEvent.id);
     assignPosition(nextSequence);
-    var error;
+    // Check if all condition have a name and a choice
     tasksConditions.forEach(taskConditions => {
         taskConditions.conditions.forEach(condition => {
             if (condition.name === ''){
                 error = {error: 'Condition must have a name'}
             }
-            if (condition.choice === '') {
-                error = {error: 'A condition must have choices'}
+            if (condition.choice) {
+                error = {error: 'A condition must have choices (Expression)'}
             }
         })
-    })
+    });
 
     return (error ? error : {
         boardName,
@@ -66,7 +89,7 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
         var tabSeq = sequence.filter(sequence => sequence.source === nextSequence.target);
         conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
         conditionToAdd.idUnique = nextSequence.id;
-        conditionToAdd.choice = nextSequence.name;
+        conditionToAdd.choice = nextSequence.choice;
         tabConditions.push(conditionToAdd);
         tabSeq.forEach((cond) => {
             var temp = Array.from(tabConditions);
@@ -76,7 +99,7 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
     } else {
         if (isCondition(nextSequence.source) && isTasks(nextSequence.target)){
             conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
-            conditionToAdd.choice = nextSequence.name;
+            conditionToAdd.choice = nextSequence.choice;
             conditionToAdd.idUnique = nextSequence.id;
             tabConditions.push(conditionToAdd);
             setTaskCondition(nextSequence.target, tabConditions);
@@ -180,6 +203,81 @@ setTaskPos = (id, pos) => {
     }
 }
 
+setChoiceSequence = () => {
+    let error;
+    const tabOperator = ['<=', '<', '>=', '>'];
+    sequence.forEach(sequence => {
+        if (sequence.expression !== '') {
+            // Clear string
+            // Delete all space
+            let expression = sequence.expression.replace(/\s+/g, '');
+            // Delete ${ at the start of the expression
+            const firstIndex = expression.indexOf('$');
+            expression = expression.substring(firstIndex + 2);
+            // Delete } at the end of the expression
+            const lastIndex = expression.lastIndexOf('}');
+            expression = expression.substring(0, lastIndex);
+
+            let type;
+            let nameVar;
+            let operator;
+            let value;
+            if (expression.includes('==')) {
+                operator = '==';
+                const tempSubString = expression.split(operator);
+                nameVar = tempSubString[0];
+                isNaN(tempSubString[1]) ? type = 'string' : type = 'number';
+                value = tempSubString[1];
+                // If it's a string delete ' at the start and ' at the end for the value
+                if (type === 'string') {
+                    const firstIndex = value.indexOf("'");
+                    value = value.substring(firstIndex + 1);
+                    // Delete } at the end of the expression
+                    const lastIndex = value.lastIndexOf("'");
+                    value = value.substring(0, lastIndex);
+                }
+            } else if (tabOperator.some(op => expression.includes(op))) {
+                if (expression.includes('<=')) {
+                    operator = '<=';
+                } else if (expression.includes('<')) {
+                    operator = '<';
+                } else if (expression.includes('>=')) {
+                    operator = '>=';
+                } else if (expression.includes('>')) {
+                    operator = '>';
+                } 
+                const tempSubString = expression.split(operator);
+                isNaN(tempSubString[1]) ? type = 'string' : type = 'number';
+                if (type === 'string') {
+                    error = {error: 'You cant use string with operator: ' + operator};
+                } else {
+                    nameVar = tempSubString[0];
+                    value = tempSubString[1];
+                }  
+            } else {
+                // Last case, we got a boolean
+                type = 'boolean';
+                if (expression.indexOf('!') === 0) {
+                    value = false;
+                    nameVar = expression.substring(1);
+                } else {
+                    value = true;
+                    nameVar = expression;
+                }
+            }
+            
+            if (!error) {
+                sequence.choice = {
+                    nameVar,
+                    value,
+                    type,
+                    operator
+                }
+            }
+        }
+    });
+    return error;
+}
 
 readBPMNToJson = async function (xmlContent) {
     return result = await transform(xmlContent, {
@@ -198,7 +296,7 @@ readBPMNToJson = async function (xmlContent) {
                 sequenceFlow: ['process/sequenceFlow', {
                     source: '@sourceRef',
                     target: '@targetRef',
-                    name: '@name',
+                    expression: 'conditionExpression',
                     id: '@id'
                 }],
                 exclusiveGateway: ['process/exclusiveGateway', {
