@@ -5,6 +5,7 @@ var conditions = [];
 var sequence = [];
 var tasksConditions = [];
 var tempPos;
+var posCondition;
 
 getElementfromDiagram = async (xmlContent) => {
     tasks = [];
@@ -13,6 +14,7 @@ getElementfromDiagram = async (xmlContent) => {
     const result = await readBPMNToJson(xmlContent)
     const root = result.elem[0];
     sequence = root.sequenceFlow;
+    posCondition = 1;
 
     // Fill tasks with start + tasks + end and add pos
     getAllTasks(root);
@@ -87,6 +89,7 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
         })
     } else if (isCondition(nextSequence.source) && isCondition(nextSequence.target)) {
         var tabSeq = sequence.filter(sequence => sequence.source === nextSequence.target);
+        setConditionPos(nextSequence.source);
         conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
         conditionToAdd.idUnique = nextSequence.id;
         conditionToAdd.choice = nextSequence.choice;
@@ -98,6 +101,7 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
         })
     } else {
         if (isCondition(nextSequence.source) && isTasks(nextSequence.target)){
+            setConditionPos(nextSequence.source);
             conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
             conditionToAdd.choice = nextSequence.choice;
             conditionToAdd.idUnique = nextSequence.id;
@@ -117,6 +121,13 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
     }
 }
 
+setConditionPos = (id) => {
+    if (!conditions.find(condition => condition.id === id).pos){
+        conditions.find(condition => condition.id === id).pos = posCondition;
+        posCondition += 1;
+    }
+}
+
 setTaskCondition = (idTask, tabConditions) => {
     tasksConditions.push({
         idTask,
@@ -129,7 +140,8 @@ setTaskCondition = (idTask, tabConditions) => {
             name: condition.name,
             choice: condition.choice,
             id: condition.id,
-            idUnique: condition.idUnique
+            idUnique: condition.idUnique,
+            posCondition: condition.pos
         })
     })
 }
