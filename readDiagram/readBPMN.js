@@ -57,12 +57,12 @@ getElementfromDiagram = async (xmlContent) => {
     var nextSequence = findSequence(root.startEvent.id);
     assignPosition(nextSequence);
     // Check if all condition have a name and a choice
+    
     tasksConditions.forEach(taskConditions => {
         taskConditions.conditions.forEach(condition => {
             if (condition.name === ''){
                 error = {error: 'Condition must have a name'}
-            }
-            if (condition.choice) {
+            } else if (condition.name && !condition.choice) {
                 error = {error: 'A condition must have choices (Expression)'}
             }
         })

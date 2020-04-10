@@ -79,6 +79,19 @@ exports.createConditions = (idBoard, conditions, token, key) => {
                     console.log("Comment created");
                     closeCard(idCard, token, key)
                     .then(() => {
+                        createCard(idList, "User_Data_Storage", token, key)
+                        .then((idCard) => {
+                            closeCard(idCard, token, key)
+                            .then(() => {
+                                resolve();
+                            })
+                            .catch((error) => {
+                                reject(error);
+                            });
+                        })
+                        .catch((error) => {
+                            reject(error);
+                        });
                         resolve();
                     })
                     .catch((error) => {
