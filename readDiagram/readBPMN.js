@@ -23,6 +23,18 @@ getElementfromDiagram = async (xmlContent) => {
     if (tasks.length === 0){
         return {error: 'You have to add some task'}
     }
+    tasks.forEach(task => {
+        if (task.forms.length > 0){
+            task.forms.forEach(form => {
+                if (form.label === '' || form.id === '' || form.type === ''){
+                    error = {error: 'You have to add an id, label and type for each formData'};
+                }
+            })
+        }
+    });
+    if (error) {
+        return error;
+    }
     if (root.startEvent.id === '' || !root.endEvent.id === ''){
         return {error: 'You have to add start and end event'}
     }
@@ -68,6 +80,13 @@ getElementfromDiagram = async (xmlContent) => {
                 error = {error: 'A condition must have choices (Expression)'}
             }
         })
+    });
+
+    // Add form to taskConditions
+    tasks.forEach(task => {
+        if (task.forms.length > 0){
+            tasksConditions.find(taskCondition => taskCondition.idTask === task.id).forms = task.forms;
+        }
     });
 
     return (error ? error : {
@@ -132,7 +151,8 @@ setTaskCondition = (idTask, tabConditions) => {
     tasksConditions.push({
         idTask,
         conditions: [],
-        lastTask: []
+        lastTask: [],
+        forms: []
     });
     item = tasksConditions.find(taskConditions => taskConditions.idTask === idTask);
     tabConditions.forEach(condition => {
@@ -153,7 +173,8 @@ setPreviousTask = (idTask, lastTask) => {
         tasksConditions.push({
             idTask,
             conditions: [],
-            lastTask: [lastTask]
+            lastTask: [lastTask],
+            forms: []
         });
     }
 }
@@ -187,21 +208,33 @@ getAllTasks = (root) => {
     tasks.push({
         name: root.startEvent.name,
         id: root.startEvent.id,
-        pos: 1
+        pos: 1,
+        forms: []
     });
 
     root.tasks.forEach(task => {
         tasks.push({
             name: task.name,
             id: task.id,
-            pos: 0
+            pos: 0,
+            forms: []
+        });
+    });
+
+    root.userTasks.forEach(task => {
+        tasks.push({
+            name: task.name,
+            id: task.id,
+            pos: 0,
+            forms: task.forms
         });
     });
 
     tasks.push({
         name: root.endEvent.name,
         id: root.endEvent.id,
-        pos: 1
+        pos: 1,
+        forms: []
     });
 }
 
@@ -304,6 +337,15 @@ readBPMNToJson = async function (xmlContent) {
                 tasks: ['process/task', {
                     id: '@id',
                     name: '@name'
+                }],
+                userTasks: ['process/userTask', {
+                    id: '@id',
+                    name: '@name',
+                    forms: ['extensionElements/camunda:formData/camunda:formField', {
+                        nameVar: '@id',
+                        label: '@label',
+                        type: '@type'
+                    }]
                 }],
                 sequenceFlow: ['process/sequenceFlow', {
                     source: '@sourceRef',
