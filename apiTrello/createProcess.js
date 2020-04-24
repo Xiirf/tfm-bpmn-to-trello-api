@@ -29,6 +29,61 @@ exports.createBoard = (nameBoard, teamName, token, key) => {
     });
 }
 
+exports.addMember =  async (idBoard, tasks, token, key) => {
+    for (task of tasks) {
+        const data = {
+            params: {
+                token,
+                key
+            }
+        }
+        for (idMember of task.assigned) {
+            console.log(idMember);
+            const error = await requestTrello.get('/members/' + idMember, data)
+            .then(async resp => {
+                const idAdmin = await requestTrello.get('/members/me', data)
+                .then(async resp => {
+                    return resp.data.id
+                });
+                type = 'normal'
+                if (idAdmin === resp.data.id) {
+                    type = 'admin'
+                }
+                const data2 = {
+                    token,
+                    key,
+                    type
+                }
+                await requestTrello.put('/boards/' + idBoard + '/members/' + resp.data.id, data2)
+                .then(_ => {
+                    console.log('Member ' + idMember + 'added to the board')
+                })
+                .catch(error => {
+                    console.log(error);
+                    var err = {
+                        error: error.message + ' ( ' + error.response.statusText + ' )',
+                        status: error.response.status,
+                        msg: error.response.data
+                    }
+                    throw error;   
+                })
+            })
+            .catch(error => {
+                if (error.response.data === 'model not found') {
+                    error.response.data = 'El usuario Trello ' + idMember + ' no existe'
+                }
+                var err = {
+                    error: error.message + ' ( ' + error.response.statusText + ' )',
+                    status: error.response.status,
+                    msg: error.response.data
+                }
+                return(err);
+            });
+            if (error) throw error;       
+        }
+    }
+}
+
 exports.createList =  async (idBoard, tasks, token, key, conditions) => {
     for (task of tasks) {
         const data = {

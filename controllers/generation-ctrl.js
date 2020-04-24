@@ -55,9 +55,19 @@ exports.generate = (req, res) => {
                         if (!(cond.length === 0)){
                             createElement.createConditions(idBoard, cond, token, key)
                                 .then(() => {
-                                    res.status(201).json({
-                                        message: 'Board created',
-                                    });
+                                    createElement.addMember(idBoard, tasks, token, key)
+                                        .then(() => {
+                                            res.status(201).json({
+                                                message: 'Board created',
+                                            });
+                                        })
+                                        .catch((error) => {
+                                            createElement.deleteBoard(idBoard, token, key);
+                                            res.status(error.status).json({
+                                                error: error.error,
+                                                msg: error.msg
+                                            });
+                                        });
                                 })
                                 .catch((error) => {
                                     createElement.deleteBoard(idBoard, token, key);

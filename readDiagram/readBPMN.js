@@ -6,8 +6,10 @@ var sequence = [];
 var tasksConditions = [];
 var tempPos;
 var posCondition;
+var error;
 
 getElementfromDiagram = async (xmlContent) => {
+    error = null;
     tasks = [];
     conditions = [];
     tasksConditions = [];
@@ -18,6 +20,9 @@ getElementfromDiagram = async (xmlContent) => {
 
     // Fill tasks with start + tasks + end and add pos
     getAllTasks(root);
+    if (error) {
+        return error;
+    }
     var boardName = root.boardName;
     setConditions(root.exclusiveGateway);
     if (tasks.length === 0){
@@ -82,10 +87,13 @@ getElementfromDiagram = async (xmlContent) => {
         })
     });
 
-    // Add form to taskConditions
+    // Add form to taskConditions and assigned members
     tasks.forEach(task => {
         if (task.forms.length > 0){
             tasksConditions.find(taskCondition => taskCondition.idTask === task.id).forms = task.forms;
+        }
+        if (task.assigned.length > 0) {
+            tasksConditions.find(taskCondition => taskCondition.idTask === task.id).assigned = task.assigned;
         }
     });
 
@@ -209,6 +217,7 @@ getAllTasks = (root) => {
         name: root.startEvent.name,
         id: root.startEvent.id,
         pos: 1,
+        assigned: [],
         forms: []
     });
 
@@ -217,15 +226,26 @@ getAllTasks = (root) => {
             name: task.name,
             id: task.id,
             pos: 0,
+            assigned: [],
             forms: []
         });
     });
 
     root.userTasks.forEach(task => {
+        const assigned = [];
+        if (task.assigned !== '') {
+            task.assigned.split('/').forEach(assignee => {
+                if (assignee.trim() !== '') {
+                    assigned.push(assignee.trim());
+                }
+            });
+        }
+
         tasks.push({
             name: task.name,
             id: task.id,
             pos: 0,
+            assigned,
             forms: task.forms
         });
     });
@@ -234,6 +254,7 @@ getAllTasks = (root) => {
         name: root.endEvent.name,
         id: root.endEvent.id,
         pos: 1,
+        assigned: [],
         forms: []
     });
 }
@@ -341,6 +362,7 @@ readBPMNToJson = async function (xmlContent) {
                 userTasks: ['process/userTask', {
                     id: '@id',
                     name: '@name',
+                    assigned: '@camunda:assignee',
                     forms: ['extensionElements/camunda:formData/camunda:formField', {
                         nameVar: '@id',
                         label: '@label',
