@@ -53,9 +53,9 @@ exports.generate = (req, res) => {
                 return createElement.createList(idBoard, tasks, token, key, conditions)
                     .then((cond) => {
                         if (!(cond.length === 0)){
-                            createElement.createConditions(idBoard, cond, token, key)
-                                .then(() => {
-                                    createElement.addMember(idBoard, tasks, token, key)
+                            createElement.addMember(idBoard, cond, token, key)
+                                .then((cond) => {
+                                    createElement.createConditions(idBoard, cond, token, key)
                                         .then(() => {
                                             res.status(201).json({
                                                 message: 'Board created',

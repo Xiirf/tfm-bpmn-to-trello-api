@@ -160,7 +160,8 @@ setTaskCondition = (idTask, tabConditions) => {
         idTask,
         conditions: [],
         lastTask: [],
-        forms: []
+        forms: [],
+        assigned: []
     });
     item = tasksConditions.find(taskConditions => taskConditions.idTask === idTask);
     tabConditions.forEach(condition => {
@@ -182,7 +183,8 @@ setPreviousTask = (idTask, lastTask) => {
             idTask,
             conditions: [],
             lastTask: [lastTask],
-            forms: []
+            forms: [],
+            assigned: []
         });
     }
 }
