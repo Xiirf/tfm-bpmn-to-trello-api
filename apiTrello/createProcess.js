@@ -227,13 +227,6 @@ createComment = (idCard, conditions, token, key) => {
     return new Promise( (resolve, reject) => {
         var content = '';
 
-        /*conditions.forEach(element => {
-            content += element.name + ':';
-            element.branch.forEach((item) => {
-                content += item.task + '=' + item.nameCondition + '/';
-            })
-            content += '\n';
-        });*/
         content = JSON.stringify(conditions);
         const data = {
             text: content,
@@ -266,6 +259,32 @@ closeCard = (idCard, token, key) => {
         return requestTrello.put('/cards/' + idCard, data)
         .then(resp => {
             console.log("Card : " + nameCard + " closed");
+            resolve();
+        })
+        .catch(error => {
+            var err = {
+                error: error.message + ' ( ' + error.response.statusText + ' )',
+                status: error.response.status,
+                msg: error.response.data
+            }
+            reject(err);
+        });
+    });
+}
+
+exports.addPowerUp = (idBoard, idPowerUp, token, key) => {
+    return new Promise( (resolve, reject) => {
+        console.log(idPowerUp);
+        if (idPowerUp === null) {
+            resolve();
+        }
+        const data = {
+            idPlugin: idPowerUp,
+            token,
+            key
+        }
+        return requestTrello.post('/boards/' + idBoard + '/boardPlugins', data)
+        .then((resp) => {
             resolve();
         })
         .catch(error => {

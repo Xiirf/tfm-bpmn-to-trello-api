@@ -20,6 +20,9 @@ const createElement = require('../apiTrello/createProcess');
  *                teamName:
  *                  type: string
  *                  description: Trello team name.
+ *                idPowerUp:
+ *                  type: string
+ *                  description: Id power up.
  *                file:
  *                  type: string
  *                  description: file(xml).
@@ -30,10 +33,10 @@ const createElement = require('../apiTrello/createProcess');
  *          description: Error (see description)
  */
 exports.generate = (req, res) => {
-    const { teamName, file, token, key } = req.body;
+    const { teamName, idPowerUp, file, token, key } = req.body;
     if (!teamName || !file || !token || !key) {
         return res.status(400).json({
-            error: 'Debe indicar el teamName, el fichero, el token y la key',
+            error: 'Debe indicar el teamName, el idPowerUp(null), el fichero, el token y la key',
         })
     }
 
@@ -50,16 +53,26 @@ exports.generate = (req, res) => {
         //Création du board
         return createElement.createBoard(boardName, teamName, token, key)
             .then((idBoard) => {
-                return createElement.createList(idBoard, tasks, token, key, conditions)
-                    .then((cond) => {
-                        if (!(cond.length === 0)){
-                            createElement.addMember(idBoard, cond, token, key)
-                                .then((cond) => {
-                                    createElement.createConditions(idBoard, cond, token, key)
-                                        .then(() => {
-                                            res.status(201).json({
-                                                message: 'Board created',
-                                            });
+                createElement.addPowerUp(idBoard, idPowerUp, token, key)
+                    .then(() => {
+                        return createElement.createList(idBoard, tasks, token, key, conditions)
+                            .then((cond) => {
+                                if (!(cond.length === 0)){
+                                    createElement.addMember(idBoard, cond, token, key)
+                                        .then((cond) => {
+                                            createElement.createConditions(idBoard, cond, token, key)
+                                                .then(() => {
+                                                    res.status(201).json({
+                                                        message: 'Board created',
+                                                    });
+                                                })
+                                                .catch((error) => {
+                                                    createElement.deleteBoard(idBoard, token, key);
+                                                    res.status(error.status).json({
+                                                        error: error.error,
+                                                        msg: error.msg
+                                                    });
+                                                });
                                         })
                                         .catch((error) => {
                                             createElement.deleteBoard(idBoard, token, key);
@@ -68,19 +81,19 @@ exports.generate = (req, res) => {
                                                 msg: error.msg
                                             });
                                         });
-                                })
-                                .catch((error) => {
-                                    createElement.deleteBoard(idBoard, token, key);
-                                    res.status(error.status).json({
-                                        error: error.error,
-                                        msg: error.msg
+                                } else {
+                                    res.status(201).json({
+                                        message: 'Board created',
                                     });
+                                }
+                            })
+                            .catch((error) => {
+                                createElement.deleteBoard(idBoard, token, key);
+                                res.status(error.status).json({
+                                    error: error.error,
+                                    msg: error.msg
                                 });
-                        } else {
-                            res.status(201).json({
-                                message: 'Board created',
                             });
-                        }
                     })
                     .catch((error) => {
                         createElement.deleteBoard(idBoard, token, key);
