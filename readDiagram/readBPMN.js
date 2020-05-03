@@ -87,6 +87,9 @@ getElementfromDiagram = async (xmlContent) => {
         })
     });
 
+    //Add all value possibility for string form param
+    setFormStringValue();
+
     // Add form to taskConditions and assigned members
     tasks.forEach(task => {
         if (task.forms.length > 0){
@@ -173,6 +176,27 @@ setTaskCondition = (idTask, tabConditions) => {
             posCondition: condition.pos
         })
     })
+}
+
+// Add different value for the string form param
+setFormStringValue = () => {
+    tasks.forEach(task => {
+        if (task.forms.length > 0){
+            for (form of task.forms) {
+                const value = [];
+                tasksConditions.forEach(taskConditions => {
+                    taskConditions.conditions.forEach(condition => {
+                        if (condition.choice.nameVar === form.nameVar && form.type === 'string'){
+                            if (!value.includes(condition.choice.value)) {
+                                value.push(condition.choice.value);
+                            }
+                        } 
+                    });
+                });
+                form.value = value;
+            }
+        }
+    });
 }
 
 setPreviousTask = (idTask, lastTask) => {
