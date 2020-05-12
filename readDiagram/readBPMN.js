@@ -199,6 +199,7 @@ setFormStringValue = () => {
     });
 }
 
+// Add previous task for the given id task
 setPreviousTask = (idTask, lastTask) => {
     if(tasksConditions.find(taskConditions => taskConditions.idTask === idTask)){
         tasksConditions.find(taskConditions => taskConditions.idTask === idTask).lastTask.push(lastTask);
@@ -213,7 +214,7 @@ setPreviousTask = (idTask, lastTask) => {
     }
 }
 
-
+// Return the sequence for the given id
 findSequence = (id) => {
     return sequence.find(sequence => sequence.source === id);
 }
@@ -238,7 +239,9 @@ isTasks = (id) => {
     return tasks.find(task => task.id === id) != null;
 }
 
+// Set all tasks (Normal task, start and end task, user task)
 getAllTasks = (root) => {
+    // First task (startEvent)
     tasks.push({
         name: root.startEvent.name,
         id: root.startEvent.id,
@@ -247,6 +250,7 @@ getAllTasks = (root) => {
         forms: []
     });
 
+    // Classic tasks
     root.tasks.forEach(task => {
         tasks.push({
             name: task.name,
@@ -257,6 +261,7 @@ getAllTasks = (root) => {
         });
     });
 
+    // User tasks
     root.userTasks.forEach(task => {
         const assigned = [];
         if (task.assigned !== '') {
@@ -276,6 +281,7 @@ getAllTasks = (root) => {
         });
     });
 
+    // Last task (endEvent)
     tasks.push({
         name: root.endEvent.name,
         id: root.endEvent.id,
@@ -285,10 +291,12 @@ getAllTasks = (root) => {
     });
 }
 
+// Get task position from his id
 getTaskPos = (id) => {
     return tasks.find(task => task.id === id).pos;
 }
 
+// Set the position for the given task id 
 setTaskPos = (id, pos) => {
     if (getTaskPos(id) < pos) {
         tasks.find(task => task.id === id).pos = pos;
@@ -371,6 +379,7 @@ setChoiceSequence = () => {
     return error;
 }
 
+// Extract all information from xml using transform from camaro
 readBPMNToJson = async function (xmlContent) {
     return result = await transform(xmlContent, {
         elem: [
@@ -416,4 +425,9 @@ readBPMNToJson = async function (xmlContent) {
 
 module.exports = {
     getElementfromDiagram,
+    tasks,
+    getAllTasks,
+    getTaskPos,
+    setTaskPos,
+    isTasks
 }
