@@ -1,4 +1,6 @@
-//Camaro
+// File grouping all the methods used to read a BPMN diagram 
+// and to bring out the important information for the generation on Trello
+// Import from Camaro to read an XML file (BPMN)
 const { transform } = require('camaro')
 var tasks = []; 
 var conditions = [];
@@ -24,10 +26,12 @@ getElementfromDiagram = async (xmlContent) => {
         return error;
     }
     var boardName = root.boardName;
+    // Get all condition
     setConditions(root.exclusiveGateway);
     if (tasks.length === 0){
         return {error: 'You have to add some task'}
     }
+    // Check if all value from form have all requisite 
     tasks.forEach(task => {
         if (task.forms.length > 0){
             task.forms.forEach(form => {
@@ -75,8 +79,8 @@ getElementfromDiagram = async (xmlContent) => {
 
     var nextSequence = findSequence(root.startEvent.id);
     assignPosition(nextSequence);
+
     // Check if all condition have a name and a choice
-    
     tasksConditions.forEach(taskConditions => {
         taskConditions.conditions.forEach(condition => {
             if (condition.name === ''){
@@ -107,7 +111,12 @@ getElementfromDiagram = async (xmlContent) => {
     })
 }
 
+// Method using all file method to set all condition to the corresponding task,
+// set all previous tasks from another task
+// set all position
+// It help to have all needed information from BPMN in Trello
 assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
+    // In this case the source is a task and the destination element is a condition
     if(isTasks(nextSequence.source) && isCondition(nextSequence.target)){
         //Pos for the next task (we dodge condition to assign pos)
         tempPos = getTaskPos(nextSequence.source) + 1;
@@ -117,6 +126,7 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
             assignPosition(cond, lastTask);
             tempPos = tempPos + 1;
         })
+    // In this case the source is a condition and the destination element is also a condition
     } else if (isCondition(nextSequence.source) && isCondition(nextSequence.target)) {
         var tabSeq = sequence.filter(sequence => sequence.source === nextSequence.target);
         setConditionPos(nextSequence.source);
@@ -130,6 +140,7 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
             tempPos = tempPos + 1;
         })
     } else {
+        // In this case the source is a condition and the destination element is a task
         if (isCondition(nextSequence.source) && isTasks(nextSequence.target)){
             setConditionPos(nextSequence.source);
             conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
@@ -141,16 +152,19 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
             setTaskPos(nextSequence.target, tempPos);
             tabConditions = [];
         } else {
+            // In this case the source is a task and the destination element is also a task
             setPreviousTask(nextSequence.target, nextSequence.source);
             setTaskPos(nextSequence.target, getTaskPos(nextSequence.source) +1 );
         }
         nextSequence = findSequence(nextSequence.target);
+        // If it's not the last element so we can call the fonction again (recursive method)
         if (nextSequence) {
             assignPosition(nextSequence);
         }
     }
 }
 
+// Assign a position to a condition if it is not already set
 setConditionPos = (id) => {
     if (!conditions.find(condition => condition.id === id).pos){
         conditions.find(condition => condition.id === id).pos = posCondition;
@@ -158,6 +172,7 @@ setConditionPos = (id) => {
     }
 }
 
+// Add the condition in the conditions array for the task with the given id
 setTaskCondition = (idTask, tabConditions) => {
     tasksConditions.push({
         idTask,
@@ -178,7 +193,7 @@ setTaskCondition = (idTask, tabConditions) => {
     })
 }
 
-// Add different value for the string form param
+// Add all possible values for the form variable (string only)
 setFormStringValue = () => {
     tasks.forEach(task => {
         if (task.forms.length > 0){
@@ -303,6 +318,7 @@ setTaskPos = (id, pos) => {
     }
 }
 
+// Get all information about different expression to save it in Trello
 setChoiceSequence = () => {
     let error;
     const tabOperator = ['<=', '<', '>=', '>'];
@@ -322,6 +338,7 @@ setChoiceSequence = () => {
             let nameVar;
             let operator;
             let value;
+            // In this caser we can use string or number
             if (expression.includes('==')) {
                 operator = '==';
                 const tempSubString = expression.split(operator);
@@ -336,6 +353,7 @@ setChoiceSequence = () => {
                     const lastIndex = value.lastIndexOf("'");
                     value = value.substring(0, lastIndex);
                 }
+            // In this case we are using number
             } else if (tabOperator.some(op => expression.includes(op))) {
                 if (expression.includes('<=')) {
                     operator = '<=';
@@ -423,11 +441,31 @@ readBPMNToJson = async function (xmlContent) {
     })
 }
 
+// Methode for testing to set variable
+setPosCondition = (pos) => {
+    posCondition = pos;
+}
+
+setSequence = (sequences) => {
+    sequence = sequences;
+}
+
 module.exports = {
     getElementfromDiagram,
     tasks,
     getAllTasks,
     getTaskPos,
     setTaskPos,
-    isTasks
+    isTasks,
+    sequence,
+    setPreviousTask,
+    tasksConditions,
+    setConditions,
+    conditions,
+    isCondition,
+    setConditionPos,
+    posCondition,
+    setPosCondition,
+    setSequence,
+    setChoiceSequence
 }
