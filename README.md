@@ -1,7 +1,16 @@
 # TFM_BPMN_to_Trello
 
-## You need to add your API Key for trello in .env file (https://trello.com/app-key)
-api_key=secret
+API using the Trello API (https://developer.atlassian.com/cloud/trello/rest/) to generate different elements of a BPMN digram. Only one route is available, the documentation is available here: https://tfm-bpmn-to-trello-api.herokuapp.com/api/v1/docs/
 
-## Get token with https://trello.com/1/authorize?expiration=1day&name=MyPersonalToken&scope=read&response_type=token&key={YourAPIKey}
+## Heroku deployment
+https://tfm-bpmn-to-trello-api.herokuapp.com/
 
+## Local launch
+npm install
+npm start
+
+## Author
+Flavien Cocu
+
+## Context
+Master's final project, University of Seville, Master's degree in software engineering.
