@@ -6,7 +6,7 @@ API using the Trello API (https://developer.atlassian.com/cloud/trello/rest/) to
 https://tfm-bpmn-to-trello-api.herokuapp.com/
 
 ## Local launch
-npm install
+npm install <br/>;
 npm start
 
 ## Author
