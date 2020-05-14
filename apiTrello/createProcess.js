@@ -290,7 +290,7 @@ closeCard = (idCard, token, key) => {
 // Add Power up
 exports.addPowerUp = (idBoard, idPowerUp, token, key) => {
     return new Promise( (resolve, reject) => {
-        if (idPowerUp === null) {
+        if (idPowerUp === null || idPowerUp === undefined) {
             resolve();
         }
         const data = {
