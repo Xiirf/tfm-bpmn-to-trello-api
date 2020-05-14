@@ -9,6 +9,9 @@ https://tfm-bpmn-to-trello-api.herokuapp.com/
 npm install <br/>
 npm start
 
+## Test with mocha
+npm test
+
 ## Author
 Flavien Cocu
 
