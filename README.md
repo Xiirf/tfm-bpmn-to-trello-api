@@ -1,4 +1,4 @@
-# TFM_BPMN_to_Trello
+# TFM_BPMN_to_Trello_API
 
 API using the Trello API (https://developer.atlassian.com/cloud/trello/rest/) to generate different elements of a BPMN digram. Only one route is available, the documentation is available here: https://tfm-bpmn-to-trello-api.herokuapp.com/api/v1/docs/
 
