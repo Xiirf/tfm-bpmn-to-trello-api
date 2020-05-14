@@ -1,8 +1,10 @@
+// Trello request
 const requestBase = require('./request');
 require('dotenv').config();
 
 var requestTrello = requestBase();
 
+// Create a board
 exports.createBoard = (nameBoard, teamName, token, key) => {
     return new Promise( (resolve, reject) => {
         const data = {
@@ -29,6 +31,7 @@ exports.createBoard = (nameBoard, teamName, token, key) => {
     });
 }
 
+// Add a member to a board
 exports.addMember =  async (idBoard, conditions, token, key) => {
     for (condition of conditions) {
         const data = {
@@ -68,6 +71,7 @@ exports.addMember =  async (idBoard, conditions, token, key) => {
     return (conditions);
 }
 
+// Create a list in a board
 exports.createList =  async (idBoard, tasks, token, key, conditions) => {
     for (task of tasks) {
         const data = {
@@ -86,6 +90,7 @@ exports.createList =  async (idBoard, tasks, token, key, conditions) => {
                     condition.idTask = resp.data.id;
                     if (condition.assigned.length > 0) {
                         const assigned = [];
+                        // Assign member to card
                         for (idMember of condition.assigned) {
                             const error = await requestTrello.get('/members/' + idMember, data)
                             .then(async resp => {
@@ -128,16 +133,21 @@ exports.createList =  async (idBoard, tasks, token, key, conditions) => {
     return(conditions);
 }
 
+// Save data in a comment in a card
 exports.createConditions = (idBoard, conditions, token, key) => {
     return new Promise( (resolve, reject) => {
+        // Get the first list
         getFirstList(idBoard, token, key)
         .then((idList) => {
             nameCard = 'Conditions_Data_Storage';
+            // Create the card
             createCard(idList, nameCard, token, key)
             .then((idCard) => {
+                // Create the commment and set his content with the data
                 createComment(idCard, conditions, token, key)
                 .then(() => {
                     console.log("Comment created");
+                    // Close the card to archive her
                     closeCard(idCard, token, key)
                     .then(() => {
                         resolve();
@@ -160,6 +170,7 @@ exports.createConditions = (idBoard, conditions, token, key) => {
     });
 }
 
+// Delete a board, using when there is an error to dont have multiple board created in Trello
 exports.deleteBoard = (idBoard, token, key) => {
     return new Promise( (resolve, reject) => {
         const data = {
@@ -176,6 +187,7 @@ exports.deleteBoard = (idBoard, token, key) => {
     });
 }
 
+// Get the id of the first list of the board
 getFirstList = (idBoard, token, key) => {
     return new Promise( (resolve, reject) => {
         const data = {
@@ -199,6 +211,7 @@ getFirstList = (idBoard, token, key) => {
     });
 }
 
+// Create a card in a list
 createCard = (idList, nameCard, token, key) => {
     return new Promise( (resolve, reject) => {
         const data = {
@@ -223,6 +236,7 @@ createCard = (idList, nameCard, token, key) => {
     });
 }
 
+// Create a comment in a card
 createComment = (idCard, conditions, token, key) => {
     return new Promise( (resolve, reject) => {
         var content = '';
@@ -249,6 +263,7 @@ createComment = (idCard, conditions, token, key) => {
     });
 }
 
+// Archive a card
 closeCard = (idCard, token, key) => {
     return new Promise( (resolve, reject) => {
         const data = {
@@ -272,10 +287,10 @@ closeCard = (idCard, token, key) => {
     });
 }
 
+// Add Power up
 exports.addPowerUp = (idBoard, idPowerUp, token, key) => {
     return new Promise( (resolve, reject) => {
-        console.log(idPowerUp);
-        if (idPowerUp === null) {
+        if (idPowerUp === null || idPowerUp === undefined) {
             resolve();
         }
         const data = {
