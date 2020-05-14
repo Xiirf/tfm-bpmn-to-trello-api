@@ -290,7 +290,6 @@ closeCard = (idCard, token, key) => {
 // Add Power up
 exports.addPowerUp = (idBoard, idPowerUp, token, key) => {
     return new Promise( (resolve, reject) => {
-        console.log(idPowerUp);
         if (idPowerUp === null) {
             resolve();
         }
