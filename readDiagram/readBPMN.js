@@ -79,6 +79,8 @@ getElementfromDiagram = async (xmlContent) => {
 
     var nextSequence = findSequence(root.startEvent.id);
     assignPosition(nextSequence);
+    // Set the endind task at the end
+    tasks.find(task => task.id === root.endEvent.id).pos = tempPos+1;
 
     // Check if all condition have a name and a choice
     tasksConditions.forEach(taskConditions => {
@@ -95,6 +97,7 @@ getElementfromDiagram = async (xmlContent) => {
     setFormStringValue();
 
     // Add form to taskConditions and assigned members
+
     tasks.forEach(task => {
         if (task.forms.length > 0){
             tasksConditions.find(taskCondition => taskCondition.idTask === task.id).forms = task.forms;
@@ -147,19 +150,32 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
             conditionToAdd.choice = nextSequence.choice;
             conditionToAdd.idUnique = nextSequence.id;
             tabConditions.push(conditionToAdd);
-            setTaskCondition(nextSequence.target, tabConditions);
-            setPreviousTask(nextSequence.target, lastTask);
-            setTaskPos(nextSequence.target, tempPos);
+            setNextTask(lastTask, nextSequence.target);
+            setTaskCondition(lastTask, nextSequence.target, tabConditions);
+            //setPreviousTask(nextSequence.target, lastTask);
+            // on set pas la pos si on reviens sur nos pas 
+            // Si il set pos si c'est le dernier élément
+            if (getTaskPos(nextSequence.target) < tempPos && !getTaskPos(nextSequence.target)==0 && findSequence(nextSequence.target) != undefined) {
+                var isComingback = true;
+            } else {
+                setTaskPos(nextSequence.target, tempPos);
+                var isComingback = false;
+            }
+            
             tabConditions = [];
         } else {
             // In this case the source is a task and the destination element is also a task
-            setPreviousTask(nextSequence.target, nextSequence.source);
+            //setPreviousTask(nextSequence.target, nextSequence.source);
+            setNextTask(nextSequence.source, nextSequence.target);
             setTaskPos(nextSequence.target, getTaskPos(nextSequence.source) +1 );
         }
         nextSequence = findSequence(nextSequence.target);
         // If it's not the last element so we can call the fonction again (recursive method)
         if (nextSequence) {
-            assignPosition(nextSequence);
+            // test if we are not coming back
+            if (!isComingback) {
+                assignPosition(nextSequence);
+            }
         }
     }
 }
@@ -173,24 +189,31 @@ setConditionPos = (id) => {
 }
 
 // Add the condition in the conditions array for the task with the given id
-setTaskCondition = (idTask, tabConditions) => {
-    tasksConditions.push({
-        idTask,
-        conditions: [],
-        lastTask: [],
-        forms: [],
-        assigned: []
-    });
+setTaskCondition = (idTask, nextTask, tabConditions) => {
+    if (!tasksConditions.find(taskConditions => taskConditions.idTask === idTask)) {
+        tasksConditions.push({
+            idTask,
+            conditions: [],
+            nextTask: [],
+            forms: [],
+            assigned: []
+        });
+    }
     item = tasksConditions.find(taskConditions => taskConditions.idTask === idTask);
+    
     tabConditions.forEach(condition => {
-        item.conditions.push({
-            name: condition.name,
-            choice: condition.choice,
-            id: condition.id,
-            idUnique: condition.idUnique,
-            posCondition: condition.pos
-        })
-    })
+        // Check if the condition is already added
+        if (!item.conditions.find(cond => cond.choice === condition.choice)){
+            item.conditions.push({
+                name: condition.name,
+                choice: condition.choice,
+                id: condition.id,
+                idUnique: condition.idUnique,
+                posCondition: condition.pos,
+                destination: nextTask
+            });
+        }
+    });
 }
 
 // Add all possible values for the form variable (string only)
@@ -212,6 +235,20 @@ setFormStringValue = () => {
             }
         }
     });
+}
+// Add next task for the given id task
+setNextTask = (idTask, nextTask) => {
+    if(tasksConditions.find(taskConditions => taskConditions.idTask === idTask)){
+        tasksConditions.find(taskConditions => taskConditions.idTask === idTask).nextTask.push(nextTask);
+    } else {
+        tasksConditions.push({
+            idTask,
+            conditions: [],
+            nextTask: [nextTask],
+            forms: [],
+            assigned: []
+        });
+    }
 }
 
 // Add previous task for the given id task

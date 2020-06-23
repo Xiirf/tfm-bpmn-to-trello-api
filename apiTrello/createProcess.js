@@ -112,11 +112,16 @@ exports.createList =  async (idBoard, tasks, token, key, conditions) => {
                         condition.assigned = assigned;
                     }
                 } else {
-                    const index = condition.lastTask.indexOf(task.id);
+                    const index = condition.nextTask.indexOf(task.id);
                     if (index > -1) {
-                        condition.lastTask.splice(index, 1);
-                        condition.lastTask.push(resp.data.id);
+                        condition.nextTask.splice(index, 1);
+                        condition.nextTask.push(resp.data.id);
                     }
+                    condition.conditions.forEach(condition => {
+                        if (task.id === condition.destination) {
+                            condition.destination = resp.data.id;
+                        }
+                    });
                 }
             }
         })

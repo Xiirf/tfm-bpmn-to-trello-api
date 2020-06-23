@@ -1,0 +1,41 @@
+@startuml
+title BPMN a Trello API
+boundary Aplicación_web_de_generación_de_diagramas
+entity GenerationRouter
+entity GenerationController
+entity readBPMN
+boundary API_Trello
+activate Aplicación_web_de_generación_de_diagramas
+Aplicación_web_de_generación_de_diagramas -> GenerationRouter : generate(teamName, idPowerUp, file, token, key)
+activate GenerationRouter
+GenerationRouter -> GenerationController : generate(teamName, idPowerUp, file, token, key)
+activate GenerationController
+alt (!teamName || !idPowerUp || !file || !token || !key)
+    GenerationController -> GenerationRouter : 'Debe indicar el teamName, el idPowerUp(null), el fichero, el token y la key'
+    GenerationRouter -> Aplicación_web_de_generación_de_diagramas : 'Debe indicar el teamName, el idPowerUp(null), el fichero, el token y la key'
+else
+    activate readBPMN
+    GenerationController -> readBPMN : getElementfromDiagram(file)
+    readBPMN -> GenerationController : return(element)
+    deactivate readBPMN
+    alt error
+        GenerationController -> GenerationRouter : 'Diagram error'
+        GenerationRouter -> Aplicación_web_de_generación_de_diagramas : 'Diagram error'
+    else
+        activate API_Trello
+        GenerationController -> API_Trello : createTrelloRequest
+        API_Trello -> GenerationController : response
+        deactivate API_Trello
+        alt errorTrello
+            GenerationController -> GenerationRouter : 'Trello error'
+            GenerationRouter -> Aplicación_web_de_generación_de_diagramas : 'Trello error'
+        else
+            GenerationController -> GenerationRouter : 'Board created'
+            GenerationRouter -> Aplicación_web_de_generación_de_diagramas : 'Board created'
+        end
+        deactivate GenerationController
+        deactivate GenerationRouter
+    end
+end
+deactivate Aplicación_web_de_generación_de_diagramas
+@enduml
