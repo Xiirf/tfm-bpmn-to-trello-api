@@ -18,7 +18,6 @@ getElementfromDiagram = async (xmlContent) => {
     const result = await readBPMNToJson(xmlContent)
     const root = result.elem[0];
     sequence = root.sequenceFlow;
-    posCondition = 1;
 
     // Fill tasks with start + tasks + end and add pos
     getAllTasks(root);
@@ -132,9 +131,7 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
     // In this case the source is a condition and the destination element is also a condition
     } else if (isCondition(nextSequence.source) && isCondition(nextSequence.target)) {
         var tabSeq = sequence.filter(sequence => sequence.source === nextSequence.target);
-        setConditionPos(nextSequence.source);
         conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
-        conditionToAdd.idUnique = nextSequence.id;
         conditionToAdd.choice = nextSequence.choice;
         tabConditions.push(conditionToAdd);
         tabSeq.forEach((cond) => {
@@ -145,16 +142,12 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
     } else {
         // In this case the source is a condition and the destination element is a task
         if (isCondition(nextSequence.source) && isTasks(nextSequence.target)){
-            setConditionPos(nextSequence.source);
             conditionToAdd = conditions.find(condition => condition.id === nextSequence.source);
             conditionToAdd.choice = nextSequence.choice;
-            conditionToAdd.idUnique = nextSequence.id;
             tabConditions.push(conditionToAdd);
             setNextTask(lastTask, nextSequence.target);
             setTaskCondition(lastTask, nextSequence.target, tabConditions);
-            //setPreviousTask(nextSequence.target, lastTask);
-            // on set pas la pos si on reviens sur nos pas 
-            // Si il set pos si c'est le dernier élément
+            // Check if we are on a loop
             if (getTaskPos(nextSequence.target) < tempPos && !getTaskPos(nextSequence.target)==0 && findSequence(nextSequence.target) != undefined) {
                 var isComingback = true;
             } else {
@@ -165,7 +158,6 @@ assignPosition = (nextSequence, lastTask = null, tabConditions = []) => {
             tabConditions = [];
         } else {
             // In this case the source is a task and the destination element is also a task
-            //setPreviousTask(nextSequence.target, nextSequence.source);
             setNextTask(nextSequence.source, nextSequence.target);
             setTaskPos(nextSequence.target, getTaskPos(nextSequence.source) +1 );
         }
@@ -203,17 +195,15 @@ setTaskCondition = (idTask, nextTask, tabConditions) => {
     
     tabConditions.forEach(condition => {
         // Check if the condition is already added
-        if (!item.conditions.find(cond => cond.choice === condition.choice)){
+        if (!item.conditions.find(cond => cond.choice === condition.choice && cond.destination === nextTask)){
             item.conditions.push({
                 name: condition.name,
                 choice: condition.choice,
-                id: condition.id,
-                idUnique: condition.idUnique,
-                posCondition: condition.pos,
                 destination: nextTask
             });
         }
     });
+    console.log(item)
 }
 
 // Add all possible values for the form variable (string only)
