@@ -203,7 +203,6 @@ setTaskCondition = (idTask, nextTask, tabConditions) => {
             });
         }
     });
-    console.log(item)
 }
 
 // Add all possible values for the form variable (string only)
