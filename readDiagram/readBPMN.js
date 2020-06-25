@@ -240,21 +240,6 @@ setNextTask = (idTask, nextTask) => {
     }
 }
 
-// Add previous task for the given id task
-setPreviousTask = (idTask, lastTask) => {
-    if(tasksConditions.find(taskConditions => taskConditions.idTask === idTask)){
-        tasksConditions.find(taskConditions => taskConditions.idTask === idTask).lastTask.push(lastTask);
-    } else {
-        tasksConditions.push({
-            idTask,
-            conditions: [],
-            lastTask: [lastTask],
-            forms: [],
-            assigned: []
-        });
-    }
-}
-
 // Return the sequence for the given id
 findSequence = (id) => {
     return sequence.find(sequence => sequence.source === id);
@@ -484,7 +469,7 @@ module.exports = {
     setTaskPos,
     isTasks,
     sequence,
-    setPreviousTask,
+    setNextTask,
     tasksConditions,
     setConditions,
     conditions,
