@@ -81,12 +81,14 @@ describe('ReadBPMN function testing', () => {
             expect(isTasks('task4Id')).to.be(false);
         });
 
-        it('setPreviousTask', () => {
+        it('setNextTask', () => {
             expect(read.tasksConditions.length).to.equal(0);
-            setPreviousTask('task3Id', 'task1Id');
-            setPreviousTask('task2Id', 'task1Id');
+            setNextTask('task1Id', 'task3Id');
+            setNextTask('task1Id', 'task2Id');
+            expect(read.tasksConditions.length).to.equal(1);
+            setNextTask('task2Id', 'task3Id');
             expect(read.tasksConditions.length).to.equal(2);
-            expect(read.tasksConditions.find(task => task.idTask === 'task3Id').lastTask).to.contain('task1Id');
+            expect(read.tasksConditions.find(task => task.idTask === 'task1Id').nextTask).to.contain('task3Id');
         });
     });
 

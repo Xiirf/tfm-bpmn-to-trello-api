@@ -15,7 +15,10 @@ const createElement = require('../apiTrello/createProcess');
  *              type: object
  *              required:
  *                - teamName
+ *                - idPowerUp
  *                - file
+ *                - token
+ *                - key
  *              properties:
  *                teamName:
  *                  type: string
@@ -26,6 +29,12 @@ const createElement = require('../apiTrello/createProcess');
  *                file:
  *                  type: string
  *                  description: file(xml).
+ *                token:
+ *                  type: string
+ *                  description: Trello token.
+ *                key:
+ *                  type: string
+ *                  description: Trello developper key.
  *      responses:
  *        "201":
  *          description: Table generated (Trello)
